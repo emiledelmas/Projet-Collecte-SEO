@@ -1,0 +1,149 @@
+---
+title: "DashBoard Projet Collecte"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      bootswatch: minty
+    orientation: columns
+    vertical_layout: fill
+    source_code: embed
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard); library(data.table); library(ggplot2); library(plotly); library(entropy) 
+library(dplyr); library(tidyr); library(lubridate); library(scales)
+```
+
+```{r}
+# Install thematic and un-comment for themed static plots (i.e., ggplot2)
+# thematic::thematic_rmd()
+# or bslib::bs_theme_preview(), sass::font_google()
+```
+
+## Column {data-width="250"}
+
+### Interactive parameters
+
+###### 
+
+```{r}
+# Choice buttons between categories
+selectInput("category", "Category", choices = c("Baby","Beauty Products","Bodybuilding","Cocktail","Destination Travel Review Sites","Gaming","Household Appliances","Products","Recipe for Morning Noon Evening","Review Website","Reviews","Science","SEO","Statistics"), selected = "Science")
+
+
+```
+
+###### 
+
+```{r}
+
+```
+
+## Column {.tabset data-width="750"}
+
+### Overview
+
+```{r, data_import}
+library(ggplot2)
+
+
+data <- read.csv("toutscrap.csv", sep=";")
+
+
+```
+
+```{r, preprocessings}
+
+# Replace "Errors" with NA
+data[data == "Error"] <- NA
+
+# Remove rows with NA values
+data <- na.omit(data)
+
+
+```
+
+```{r, main_plot}
+data$YouTube.Videos <- as.numeric(data$YouTube.Videos)
+data$Position <- as.numeric(data$Position)
+
+# Calculer le pourcentage moyen pour chaque position en mélangeant toutes les catégories
+pourcentage_moyen <- data %>%
+  group_by(Position) %>%
+  summarize(Percentage_Other = sum(ifelse(Other.Videos > 0, 1, 0), na.rm = TRUE) / nrow(data) * 100,
+            Percentage_YouTube = sum(ifelse(YouTube.Videos > 0, 1, 0), na.rm = TRUE) / nrow(data) * 100)
+
+# Remodeler les données pour être longues
+data_long <- pourcentage_moyen %>%
+  tidyr::pivot_longer(cols = c(Percentage_Other, Percentage_YouTube), names_to = "Type", values_to = "Percentage")
+
+# Tracer le barplot des pourcentages moyens
+renderPlotly({
+  ggplotly(
+    ggplot(data_long, aes(x = factor(Position), y = Percentage, fill = Type)) +
+      geom_bar(stat = "identity", position = position_dodge(), width = 0.6) +
+      labs(x = "Position",y = "Pourcentage moyen", title = "Pourcentage moyen de vidéos par position") +
+      scale_fill_brewer(palette = "Set2") +
+      theme_minimal() +
+      theme(text = element_text(size = 12))
+  )
+})
+
+```
+
+```{r}
+
+
+```
+
+###### 
+
+```{r, main_plot2}
+
+```
+
+###### 
+
+```{r}
+
+```
+
+### First tab
+
+```{r}
+
+
+```
+
+```{r}
+# Tracer le barplot des pourcentages moyens
+renderPlotly({
+  data <- read.csv(paste0(input$category,".csv"), sep=",")
+  data$YouTube.Videos <- as.numeric(data$YouTube.Videos)
+  data$Position <- as.numeric(data$Position)
+
+  # Calculer le pourcentage moyen pour chaque position en mélangeant toutes les catégories
+  pourcentage_moyen <- data %>%
+    group_by(Position) %>%
+    summarize(Percentage_Other = sum(ifelse(Other.Videos > 0, 1, 0), na.rm = TRUE) / nrow(data) * 100,
+              Percentage_YouTube = sum(ifelse(YouTube.Videos > 0, 1, 0), na.rm = TRUE) / nrow(data) * 100)
+
+  # Remodeler les données pour être longues
+  data_long <- pourcentage_moyen %>%
+    tidyr::pivot_longer(cols = c(Percentage_Other, Percentage_YouTube), names_to = "Type", values_to = "Percentage")
+
+
+  ggplotly(
+    ggplot(data_long, aes(x = factor(Position), y = Percentage, fill = Type)) +
+      geom_bar(stat = "identity", position = position_dodge(), width = 0.6) +
+      labs(x = "Position",y = "Pourcentage moyen", title = "Pourcentage moyen de vidéos par position") +
+      scale_fill_brewer(palette = "Set2") +
+      theme_minimal() +
+      theme(text = element_text(size = 12))
+  )
+})
+
+```
+
+### Details
